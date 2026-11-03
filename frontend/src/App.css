@@ -1,0 +1,543 @@
+/* ===== Шрифты MTS Compact ===== */
+@font-face {
+  font-family: 'MTS Compact';
+  src: url('/fonts/MTSCompact-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MTS Compact';
+  src: url('/fonts/MTSCompact-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MTS Compact';
+  src: url('/fonts/MTSCompact-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'MTS Compact';
+  src: url('/fonts/MTSCompact-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --accent: #e8482c;
+  --red: #e02424;
+  --green: #1b8a5a;
+  --bg: #e0dff1;
+  --panel: #ffffff;
+  --text: #1c2430;
+  --muted: #66707d;
+  --border: #dfe4ea;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'MTS Compact', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Красная полоса заголовка на всю ширину страницы */
+.app-header {
+  background: var(--red);
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.app-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+}
+.app-header button {
+  background: #fff;
+  color: var(--red);
+  border: none;
+}
+
+.app-body {
+  flex: 1;
+  padding: 16px 24px 16px 16px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 12px 0;
+  padding: 10px;
+  min-width: 0;
+}
+legend {
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 14px 4px 0;
+}
+
+button {
+  font: inherit;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+}
+button:hover {
+  background: #f0f3f6;
+}
+button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+button.primary:hover {
+  background: #c93a21;
+}
+button.danger {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.toolbar h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta,
+.tags {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.empty {
+  padding: 16px;
+  text-align: center;
+}
+
+.map-view {
+  margin-top: 12px;
+}
+.map-container {
+  width: 100%;
+  height: 360px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-top: 12px;
+}
+.map-error {
+  padding: 40px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 12px;
+}
+.route-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-top: 12px;
+}
+.banner.error {
+  background: #fdecec;
+  color: #8f1d1d;
+  border: 1px solid #f3c4c4;
+}
+.banner.info {
+  background: #e9f5ee;
+  color: #155e3a;
+  border: 1px solid #bde5cf;
+}
+.banner button {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+}
+
+.bike-list {
+  list-style: none;
+  padding: 0;
+}
+.bike-list li {
+  padding: 6px 0;
+}
+.bike-list .disabled {
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* ===== Анимация перехода между экранами ===== */
+.step-fade {
+  animation-duration: 0.25s;
+  animation-timing-function: ease;
+  animation-fill-mode: both;
+}
+.step-fade.in {
+  animation-name: fadeIn;
+}
+.step-fade.out {
+  animation-name: fadeOut;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ===== Экран рекомендаций: фильтры слева, рекомендации справа ===== */
+.layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+.filters {
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 0;
+  margin-top: 0;
+  border: none;
+}
+.recommendations {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+  border: none;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+.recommendations.loading {
+  opacity: 0.45;
+  filter: grayscale(50%);
+}
+
+.filters h2,
+.recommendations__title {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+/* Плитки характера поездки (2x2) */
+.trip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.tile-btn {
+  padding: 18px 14px;
+  white-space: nowrap;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+.tile-btn.selected {
+  outline: 3px solid #e02424;
+  outline-offset: 2px;
+}
+
+/* Выпадающий список (время) */
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Выпадающий мультивыбор (теги) */
+.multi-select {
+  position: relative;
+  width: 100%;
+}
+.multi-select__trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+.multi-select__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.multi-select__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 10;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.multi-select__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.multi-select__option:hover {
+  background: var(--bg);
+}
+
+/* Сетка плиток рекомендаций (3 столбца) */
+.recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.route-tile {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+.route-tile:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+.route-tile__photo {
+  height: 165px;
+  background: #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.route-tile__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.photo-placeholder {
+  color: var(--muted);
+  font-size: 1rem;
+}
+.route-tile__body {
+  padding: 15px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.route-tile__title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.route-tile__body .meta {
+  font-size: 1rem;
+}
+.route-tile__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rating {
+  color: #e8962e;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.fav-btn {
+  border: none;
+  background: transparent;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.fav-btn .heart {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.fav-btn.active {
+  color: #e02424;
+}
+.fav-btn.active .heart {
+  fill: currentColor;
+}
+.fav-btn:hover {
+  background: #f0f3f6;
+}
+
+/* ===== Карта + оверлеи аренды ===== */
+.route-detail {
+  position: relative;
+}
+.rent-overlay {
+  position: absolute;
+  top: 64px;
+  right: 16px;
+  width: 320px;
+  max-width: calc(100% - 32px);
+  z-index: 6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.rent-overlay .panel {
+  margin-top: 0;
+}
+
+/* Инлайн-уведомление в тулбаре карты */
+.toolbar-notice {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e9f5ee;
+  color: #155e3a;
+  border: 1px solid #bde5cf;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.notice-close {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 2px;
+  color: inherit;
+}
+
+@media (max-width: 760px) {
+  .layout {
+    flex-direction: column;
+  }
+  .filters {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+  .recommend-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .rent-overlay {
+    position: static;
+    width: 100%;
+    max-width: none;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .recommend-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .map-container {
+    height: 280px;
+  }
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
