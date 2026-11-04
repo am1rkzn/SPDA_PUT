@@ -7,13 +7,17 @@ export default function RouteTile({ route, isFav, onToggleFavorite, onShow }) {
         ) : (
           <span className="photo-placeholder">📷 Нет фото</span>
         )}
+        <span className="route-tile__badge">~{route.durationMin} мин</span>
       </div>
 
       <div className="route-tile__body">
         <h3 className="route-tile__title">{route.title}</h3>
-        <p className="meta">~{route.durationMin} мин</p>
+        <p className="meta">{route.categories.join(' · ')}</p>
         <div className="route-tile__footer">
-          <span className="rating">★ {route.rating ?? '—'}</span>
+          <span className="rating">
+            <span className="rating__star">★</span> {route.rating ?? '—'}
+            {route.reviews ? <span className="rating__count"> · {route.reviews}</span> : null}
+          </span>
           <button
             type="button"
             className={`fav-btn${isFav ? ' active' : ''}`}

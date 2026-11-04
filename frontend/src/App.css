@@ -29,12 +29,13 @@
 }
 
 :root {
-  --accent: #e8482c;
-  --red: #e02424;
+  --accent: #ff0032;
+  --red: #ff0032;
+  --yellow: #ffc800;
   --green: #1b8a5a;
   --bg: #e0dff1;
   --panel: #ffffff;
-  --text: #1c2430;
+  --text: #1d2023;
   --muted: #66707d;
   --border: #dfe4ea;
 }
@@ -133,7 +134,7 @@ button.primary {
   border-color: var(--accent);
 }
 button.primary:hover {
-  background: #c93a21;
+  background: #cc0029;
 }
 button.danger {
   background: var(--green);
@@ -268,8 +269,7 @@ button:disabled {
   align-items: flex-start;
 }
 .filters {
-  flex: 0 0 auto;
-  width: max-content;
+  flex: 0 0 300px;
   min-width: 0;
   margin-top: 0;
   border: none;
@@ -296,24 +296,24 @@ button:disabled {
   font-weight: 900;
 }
 
-/* Плитки характера поездки (2x2) */
-.trip-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+/* Чипы-фильтры характера поездки */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.tile-btn {
-  padding: 18px 14px;
+.chip {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
   white-space: nowrap;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  text-align: center;
-  letter-spacing: 0.03em;
 }
-.tile-btn.selected {
-  outline: 3px solid #e02424;
-  outline-offset: 2px;
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 /* Выпадающий список (время) */
@@ -395,11 +395,24 @@ button:disabled {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 .route-tile__photo {
+  position: relative;
   height: 165px;
   background: #eef1f5;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.route-tile__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--accent);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
 }
 .route-tile__photo img {
   width: 100%;
@@ -432,9 +445,16 @@ button:disabled {
   justify-content: space-between;
 }
 .rating {
-  color: #e8962e;
+  color: var(--text);
   font-weight: 700;
   font-size: 1.1rem;
+}
+.rating__star {
+  color: var(--yellow);
+}
+.rating__count {
+  color: var(--muted);
+  font-weight: 400;
 }
 .fav-btn {
   border: none;
@@ -458,7 +478,7 @@ button:disabled {
   stroke-width: 2;
 }
 .fav-btn.active {
-  color: #e02424;
+  color: var(--red);
 }
 .fav-btn.active .heart {
   fill: currentColor;

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 const TRIP_OPTIONS = [
-  { value: 'любой', label: 'Любой', color: '#6c757d' },
-  { value: 'туристический', label: 'Туристический', color: '#e8962e' },
-  { value: 'активный', label: 'Активный', color: '#2f9e57' },
-  { value: 'спокойный', label: 'Спокойный', color: '#3a7bd5' },
+  { value: 'любой', label: 'Любой' },
+  { value: 'туристический', label: 'Туристический' },
+  { value: 'активный', label: 'Активный' },
+  { value: 'спокойный', label: 'Спокойный' },
 ];
 const DURATIONS = [15, 30, 60];
 const TAGS = ['набережная', 'парк', 'центр', 'озеро'];
@@ -31,13 +31,12 @@ export default function PreferenceForm({ filters, onFiltersChange }) {
 
       <fieldset>
         <legend>Характер поездки</legend>
-        <div className="trip-grid">
+        <div className="chips">
           {TRIP_OPTIONS.map((o) => (
             <button
               key={o.value}
               type="button"
-              className={`tile-btn${filters.tripType === o.value ? ' selected' : ''}`}
-              style={{ background: o.color }}
+              className={`chip${filters.tripType === o.value ? ' active' : ''}`}
               onClick={() => setTripType(o.value)}
             >
               {o.label}
