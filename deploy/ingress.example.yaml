@@ -1,0 +1,15 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: {name: put, namespace: team-2}
+spec:
+  ingressClassName: ""  # класс от команды курса
+  tls:
+    - hosts: [""]
+      secretName: ""  # существующий TLS Secret
+  rules:
+    - host: ""  # тот же домен, что и в tls.hosts
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: {service: {name: put, port: {number: 80}}}

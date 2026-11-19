@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as api from './api.js';
 import PreferenceForm from './components/PreferenceForm.jsx';
 import Recommendations from './components/Recommendations.jsx';
@@ -47,19 +47,43 @@ export default function App() {
     return () => clearTimeout(t);
   }, [step, renderedStep]);
 
-  // Восстановление активной аренды + маршрута при открытии/refresh.
+  const [syncState, setSyncState] = useState('loading');
+  const [writing, setWriting] = useState(false);
+  const writeLock = useRef(false);
+  const viewVersion = useRef(0);
+
+  async function syncRental() {
+    const version = ++viewVersion.current;
+    setSyncState('loading');
+    try {
+      const current = await api.getRental();
+      if (viewVersion.current !== version) return;
+      api.confirmActive(current);
+      setRental(current);
+      setRentStage(current ? 'active' : 'none');
+      setSyncState('ready');
+      if (!current) {
+        setStep('recommend');
+        return;
+      }
+      setSelectedRoute(null);
+      setStep('map');
+      api.getRoute(current.routeId).then(route => {
+        if (viewVersion.current === version) setSelectedRoute(route);
+      }).catch(e => {
+        if (viewVersion.current === version) showError(e);
+      });
+    } catch (e) {
+      if (viewVersion.current === version) {
+        setSyncState('error');
+        showError(e);
+      }
+    }
+  }
+
   useEffect(() => {
-    api.getRental()
-      .then(async (r) => {
-        if (!r) return;
-        setRental(r);
-        try {
-          setSelectedRoute(await api.getRoute(r.routeId));
-        } catch {}
-        setStep('map');
-        setRentStage('active');
-      })
-      .catch(() => {});
+    syncRental();
+    return () => { ++viewVersion.current; };
   }, []);
 
   // Живое обновление рекомендаций при любой смене фильтров.
@@ -98,10 +122,13 @@ export default function App() {
   }
 
   async function handleShowRoute(id) {
+    const version = ++viewVersion.current;
     clearBanner();
     setLoading(true);
     try {
-      setSelectedRoute(await api.getRoute(id));
+      const route = await api.getRoute(id);
+      if (version !== viewVersion.current) return;
+      setSelectedRoute(route);
       setNotice(null);
       setRentStage('none');
       setStep('map');
@@ -138,44 +165,38 @@ export default function App() {
     setRentStage('none');
   }
 
-  async function handleStartRental(bikeId) {
+  async function writeRental(action, successNotice) {
+    if (writeLock.current || syncState !== 'ready') return;
+    writeLock.current = true;
+    setWriting(true);
     clearBanner();
-    setLoading(true);
     try {
-      setRental(await api.startRental({ bikeId, routeId: selectedRoute.id }));
-      setRentStage('active');
+      await action();
+      setNotice(successNotice);
     } catch (e) {
       showError(e);
     } finally {
-      setLoading(false);
+      await syncRental();
+      setWriting(false);
+      writeLock.current = false;
     }
   }
 
-  async function handleFinishRental() {
+  function handleStartRental(bikeId) {
+    return writeRental(() => api.startRental({ bikeId, routeId: selectedRoute.id }), null);
+  }
+
+  function handleFinishRental() {
+    return writeRental(() => api.finishRental(rental.id), 'Аренда завершена');
+  }
+
+  function goToActiveRental() {
     clearBanner();
-    setLoading(true);
-    try {
-      await api.finishRental();
-      setRental(null);
-      setRentStage('none');
-      setNotice('Аренда завершена');
-    } catch (e) {
-      showError(e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function goToActiveRental() {
-    if (!rental) return;
-    try {
-      setSelectedRoute(await api.getRoute(rental.routeId));
-    } catch {}
-    setStep('map');
-    setRentStage('active');
+    syncRental();
   }
 
   function handleBackToRecommend() {
+    ++viewVersion.current;
     setNotice(null);
     setStep('recommend');
   }
@@ -184,7 +205,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1>ПУТЬ — велопрогулки по Казани</h1>
-        {rental && !(renderedStep === 'map' && rentStage === 'active') && (
+        {syncState === 'ready' && rental && !(renderedStep === 'map' && rentStage === 'active') && (
           <button type="button" onClick={goToActiveRental}>● Аренда активна</button>
         )}
       </header>
@@ -193,8 +214,13 @@ export default function App() {
         <StatusBanner banner={banner} onClose={clearBanner} />
 
         <main>
+          {syncState === 'loading' && <p role="status">Проверяем текущую аренду…</p>}
+          {notice && step === 'recommend' && <p role="status">{notice}</p>}
+          {syncState === 'error' && (
+            <button onClick={() => { clearBanner(); syncRental(); }}>Повторить загрузку аренды</button>
+          )}
           <div key={renderedStep} className={`step-fade ${phase}`}>
-            {renderedStep === 'recommend' && (
+            {renderedStep === 'recommend' && syncState === 'ready' && (
               <div className="layout">
                 <PreferenceForm filters={filters} onFiltersChange={setFilters} />
                 <Recommendations
@@ -207,23 +233,23 @@ export default function App() {
               </div>
             )}
 
-            {renderedStep === 'map' && selectedRoute && (
+            {renderedStep === 'map' && syncState === 'ready' && (
               <div className="route-detail">
-                <MapView
+                {selectedRoute && <MapView
                   route={selectedRoute}
                   notice={notice}
                   onDismissNotice={dismissNotice}
                   onBack={handleBackToRecommend}
                   onRent={handleRent}
-                  showRent={rentStage === 'none'}
-                />
+                  showRent={rentStage === 'none' && !rental && syncState === 'ready'}
+                />}
 
                 {rentStage === 'pick' && (
                   <div className="rent-overlay">
                     <BikePicker
                       bikes={bikes}
                       route={selectedRoute}
-                      loading={loading}
+                      loading={loading || writing || syncState !== 'ready'}
                       onBack={handleCloseRent}
                       onRefresh={refreshBikes}
                       onStart={handleStartRental}
@@ -231,9 +257,9 @@ export default function App() {
                   </div>
                 )}
 
-                {rentStage === 'active' && (
+                {rentStage === 'active' && rental && (
                   <div className="rent-overlay">
-                    <ActiveRental rental={rental} loading={loading} onFinish={handleFinishRental} />
+                    <ActiveRental rental={rental} loading={writing || syncState !== 'ready'} onFinish={handleFinishRental} />
                   </div>
                 )}
               </div>

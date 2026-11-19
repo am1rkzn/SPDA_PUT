@@ -75,13 +75,13 @@ GitHub Pages.
 
 ## 5. Как подключить реальный Backend (FastAPI)
 
-Сейчас приложение работает на демо-данных ([`src/mockData.js`](src/mockData.js)). Когда Backend будет готов:
+При запуске через Vite по умолчанию используются [демо-данные](src/mockData.js). Для работы с FastAPI запусти Backend по [инструкции локального стенда](../backend/README.md).
 
 1. В `.env` поставь `VITE_USE_MOCK=false`.
 2. Адрес API — `VITE_API_BASE_URL=/api` (при разработке Vite проксирует `/api` на
    `http://localhost:8000`, см. [`vite.config.js`](vite.config.js)).
 
-Контракт обмена (endpoint'ы и JSON) описан в [`FRONTEND_EGOR_N1.md`](../FRONTEND_EGOR_N1.md).
+В Docker реальный API включён при сборке. Документация API доступна на `/docs`. Старт аренды передаёт UUID команды в заголовке `Idempotency-Key`, завершение передаёт `rental_id`. При обновлении страницы интерфейс читает `GET /api/rental`.
 
 ## 6. Структура
 

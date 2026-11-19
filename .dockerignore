@@ -1,0 +1,14 @@
+**
+!backend/
+!backend/*.py
+!backend/*.txt
+!backend/*.sql
+!backend/seed.json
+backend/test_*.py
+backend/requirements-test.txt
+!frontend/
+!frontend/src/**
+!frontend/public/**
+!frontend/package*.json
+!frontend/index.html
+!frontend/vite.config.js

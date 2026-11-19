@@ -11,8 +11,8 @@ import * as mock from './mockData.js';
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -49,15 +49,40 @@ export async function getRental() {
   return request('/rental');
 }
 
+const PENDING = 'put-pending-start';
+
 export async function startRental({ bikeId, routeId }) {
   if (USE_MOCK) return mock.startRental(bikeId, routeId);
-  return request('/rental', {
-    method: 'POST',
-    body: JSON.stringify({ bike_id: bikeId, route_id: routeId }),
-  });
+  let pending = JSON.parse(sessionStorage.getItem(PENDING) || 'null');
+  if (!pending || pending.bikeId !== bikeId || pending.routeId !== routeId) {
+    pending = { bikeId, routeId, key: crypto.randomUUID() };
+    sessionStorage.setItem(PENDING, JSON.stringify(pending));
+  }
+  try {
+    const rental = await request('/rental', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': pending.key },
+      body: JSON.stringify({ bike_id: bikeId, route_id: routeId }),
+    });
+    sessionStorage.removeItem(PENDING);
+    return rental;
+  } catch (e) {
+    if (e.status >= 400 && e.status < 500) sessionStorage.removeItem(PENDING);
+    throw e;
+  }
 }
 
-export async function finishRental() {
+export function confirmActive(rental) {
+  const pending = JSON.parse(sessionStorage.getItem(PENDING) || 'null');
+  if (rental && pending?.bikeId === rental.bikeId && pending.routeId === rental.routeId) {
+    sessionStorage.removeItem(PENDING);
+  }
+}
+
+export async function finishRental(rentalId) {
   if (USE_MOCK) return mock.finishRental();
-  return request('/rental/finish', { method: 'POST' });
+  return request('/rental/finish', {
+    method: 'POST',
+    body: JSON.stringify({ rental_id: rentalId }),
+  });
 }
