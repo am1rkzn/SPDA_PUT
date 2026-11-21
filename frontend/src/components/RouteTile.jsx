@@ -1,3 +1,5 @@
+import RouteThumb from './RouteThumb.jsx';
+
 export default function RouteTile({ route, isFav, onToggleFavorite, onShow }) {
   return (
     <article className="route-tile" onClick={onShow}>
@@ -5,7 +7,8 @@ export default function RouteTile({ route, isFav, onToggleFavorite, onShow }) {
         {route.photo ? (
           <img src={route.photo} alt={route.title} />
         ) : (
-          <span className="photo-placeholder">📷 Нет фото</span>
+          /* Фото пока нет — показываем схему линии маршрута на сером фоне. */
+          <RouteThumb routeId={route.id} title={route.title} />
         )}
         <span className="route-tile__badge">~{route.durationMin} мин</span>
       </div>
