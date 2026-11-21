@@ -4,11 +4,11 @@ export default function ActiveRental({ rental, loading, onFinish }) {
     : '';
 
   return (
-    <section className="panel">
+    <section className="panel rent-panel">
       <h2>● Аренда активна</h2>
       <p><strong>{rental.bikeLabel || rental.bikeId}</strong>{time ? ` · начата ${time}` : ''}</p>
       <p>Маршрут: {rental.routeTitle || rental.routeId}</p>
-      <button type="button" className="danger" onClick={onFinish} disabled={loading}>
+      <button type="button" className="danger wide" onClick={onFinish} disabled={loading}>
         {loading ? 'Завершение…' : 'Завершить аренду'}
       </button>
     </section>

@@ -145,6 +145,22 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+button.wide {
+  width: 100%;
+  margin-top: 4px;
+}
+.link-btn {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 4px 6px;
+}
+.link-btn:hover {
+  background: #f0f3f6;
+  color: var(--text);
+}
 
 .toolbar {
   display: flex;
@@ -172,30 +188,30 @@ button:disabled {
   text-align: center;
 }
 
-.map-view {
-  margin-top: 12px;
-}
 .map-container {
   width: 100%;
-  height: 360px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  margin-top: 12px;
+  height: 100%;
+  border-radius: 0;
+  border: none;
+  margin-top: 0;
 }
 .map-error {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   padding: 40px;
   text-align: center;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  margin-top: 12px;
 }
 .route-panel {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
-  margin-top: 12px;
+  margin-top: 0;
 }
 
 .banner {
@@ -226,11 +242,50 @@ button:disabled {
 .bike-list {
   list-style: none;
   padding: 0;
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .bike-list li {
-  padding: 6px 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
-.bike-list .disabled {
+.bike-list li:hover {
+  background: #f7f9fb;
+}
+.bike-list li.busy {
+  background: #f7f9fb;
+}
+.bike-list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.bike-list li.busy label {
+  cursor: not-allowed;
+}
+.bike-list__label {
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bike-list__status {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--green);
+  font-size: 0.85rem;
+  text-transform: none;
+}
+.bike-list__status.busy {
   color: var(--muted);
 }
 
@@ -444,6 +499,10 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
 }
+/* Без рейтинга (маршрут ещё не оценён) сердце остаётся у правого края. */
+.route-tile__footer .fav-btn {
+  margin-left: auto;
+}
 .rating {
   color: var(--text);
   font-weight: 700;
@@ -487,21 +546,72 @@ button:disabled {
   background: #f0f3f6;
 }
 
-/* ===== Карта + оверлеи аренды ===== */
+/* ===== Экран маршрута: информация слева, карта справа на всю высоту ===== */
 .route-detail {
+  min-width: 0;
+}
+
+.map-view {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'head head'
+    'side map';
+  gap: 14px 20px;
+  /* Высота окна минус красная шапка (60px) и вертикальные отступы .app-body (16+16). */
+  height: calc(100vh - 92px);
+  min-height: 460px;
+}
+.map-view__head {
+  grid-area: head;
+}
+.map-view__side {
+  grid-area: side;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+/* Карта занимает всё оставшееся место; скругление углов делает обёртка,
+   потому что Яндекс.Карты рисуют внутри контейнера собственные слои. */
+.map-view__map {
+  grid-area: map;
+  min-width: 0;
+  min-height: 0;
   position: relative;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: #eef1f5;
 }
-.rent-overlay {
-  position: absolute;
-  top: 64px;
-  right: 16px;
-  width: 320px;
-  max-width: calc(100% - 32px);
-  z-index: 6;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+.map-view__map--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.rent-overlay .panel {
+
+/* Панели аренды живут в левой колонке — карту не перекрывают. */
+.rent-panel {
   margin-top: 0;
+}
+.rent-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rent-panel__head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.25;
+  min-width: 0;
+}
+.rent-panel__route {
+  margin: 6px 0 0;
 }
 
 /* Инлайн-уведомление в тулбаре карты */
@@ -527,6 +637,33 @@ button:disabled {
   color: inherit;
 }
 
+@media (max-width: 900px) {
+  /* Узкий экран: карта уходит под шапку, информация и панели аренды — под карту. */
+  .map-view {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      'head'
+      'map'
+      'side';
+    height: auto;
+    min-height: 0;
+  }
+  .map-view__map {
+    height: 320px;
+  }
+  .map-view__side {
+    overflow: visible;
+    padding-right: 0;
+  }
+  .map-view__head {
+    flex-wrap: wrap;
+  }
+  .map-view__head h2 {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 760px) {
   .layout {
     flex-direction: column;
@@ -538,12 +675,6 @@ button:disabled {
   .recommend-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .rent-overlay {
-    position: static;
-    width: 100%;
-    max-width: none;
-    margin-top: 12px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -553,7 +684,7 @@ button:disabled {
 }
 
 @media (max-width: 560px) {
-  .map-container {
+  .map-view__map {
     height: 280px;
   }
   .app-header {

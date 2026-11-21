@@ -235,31 +235,61 @@ export default function App() {
 
             {renderedStep === 'map' && syncState === 'ready' && (
               <div className="route-detail">
-                {selectedRoute && <MapView
-                  route={selectedRoute}
-                  notice={notice}
-                  onDismissNotice={dismissNotice}
-                  onBack={handleBackToRecommend}
-                  onRent={handleRent}
-                  showRent={rentStage === 'none' && !rental && syncState === 'ready'}
-                />}
+                {selectedRoute ? (
+                  <MapView
+                    route={selectedRoute}
+                    notice={notice}
+                    onDismissNotice={dismissNotice}
+                    onBack={handleBackToRecommend}
+                    onRent={handleRent}
+                    showRent={rentStage === 'none' && !rental && syncState === 'ready'}
+                  >
+                    {rentStage === 'pick' && (
+                      <BikePicker
+                        bikes={bikes}
+                        route={selectedRoute}
+                        loading={loading || writing || syncState !== 'ready'}
+                        onBack={handleCloseRent}
+                        onRefresh={refreshBikes}
+                        onStart={handleStartRental}
+                      />
+                    )}
 
-                {rentStage === 'pick' && (
-                  <div className="rent-overlay">
-                    <BikePicker
-                      bikes={bikes}
-                      route={selectedRoute}
-                      loading={loading || writing || syncState !== 'ready'}
-                      onBack={handleCloseRent}
-                      onRefresh={refreshBikes}
-                      onStart={handleStartRental}
-                    />
-                  </div>
-                )}
+                    {rentStage === 'active' && rental && (
+                      <ActiveRental
+                        rental={rental}
+                        loading={writing || syncState !== 'ready'}
+                        onFinish={handleFinishRental}
+                      />
+                    )}
+                  </MapView>
+                ) : (
+                  /* Активная аренда есть, а маршрут не загрузился: карту не рисуем,
+                     но аренду оставляем — её можно завершить и повторить загрузку. */
+                  <div className="map-view">
+                    <div className="map-view__head toolbar">
+                      <button type="button" onClick={handleBackToRecommend}>← К списку</button>
+                      <h2>Маршрут не загрузился</h2>
+                    </div>
 
-                {rentStage === 'active' && rental && (
-                  <div className="rent-overlay">
-                    <ActiveRental rental={rental} loading={writing || syncState !== 'ready'} onFinish={handleFinishRental} />
+                    <aside className="map-view__side">
+                      <div className="route-panel">
+                        <p className="meta">Данные маршрута не пришли с сервера. Аренда при этом активна.</p>
+                        <button type="button" className="wide" onClick={goToActiveRental}>Повторить загрузку</button>
+                      </div>
+
+                      {rental && (
+                        <ActiveRental
+                          rental={rental}
+                          loading={writing || syncState !== 'ready'}
+                          onFinish={handleFinishRental}
+                        />
+                      )}
+                    </aside>
+
+                    <div className="map-view__map map-view__map--empty">
+                      <p className="meta">Карта недоступна без данных маршрута</p>
+                    </div>
                   </div>
                 )}
               </div>
