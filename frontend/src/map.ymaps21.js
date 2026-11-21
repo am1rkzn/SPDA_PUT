@@ -88,5 +88,7 @@ export async function addMarker(map, coords, { color = '#1b8a5a' } = {}) {
 
 export async function fitToPoints(map, points) {
   const ymaps = await loadApi();
-  map.setBounds(ymaps.util.bounds.fromPoints(points.map(toLatLng)), { checkZoomRange: true });
+  // zoomMargin оставляет поля, чтобы линия не упиралась в края карты.
+  map.setBounds(ymaps.util.bounds.fromPoints(points.map(toLatLng)),
+    { checkZoomRange: true, zoomMargin: 40 });
 }
