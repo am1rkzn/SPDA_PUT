@@ -21,7 +21,11 @@ function loadScript() {
   const key = import.meta.env.VITE_YANDEX_API_KEY;
   if (!key) {
     return Promise.reject(
-      new Error('Не задан ключ Яндекс.Карт. Добавьте VITE_YANDEX_API_KEY в файл .env (см. .env.example).'),
+      new Error(
+        'Не задан ключ Яндекс.Карт. При разработке добавьте VITE_YANDEX_API_KEY в файл .env, ' +
+          'а при сборке образа передайте его аргументом: ' +
+          'docker build --build-arg VITE_YANDEX_API_KEY=<ключ> (см. .env.example и Dockerfile).',
+      ),
     );
   }
 

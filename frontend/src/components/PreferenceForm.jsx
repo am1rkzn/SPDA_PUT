@@ -6,7 +6,7 @@ const TRIP_OPTIONS = [
   { value: 'активный', label: 'Активный' },
   { value: 'спокойный', label: 'Спокойный' },
 ];
-const DURATIONS = [15, 30, 60];
+const DURATIONS = [15, 30, 60, 120];
 const TAGS = ['набережная', 'парк', 'центр', 'озеро'];
 
 export default function PreferenceForm({ filters, onFiltersChange }) {
