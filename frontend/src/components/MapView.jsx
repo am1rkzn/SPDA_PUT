@@ -84,10 +84,9 @@ export default function MapView({ route, notice, onDismissNotice, onBack, onRent
         }
         markersRef.current = markers;
 
-        const points = route.geometry.coordinates.concat(
-          bikes.filter((b) => b.coords).map((b) => b.coords),
-        );
-        await fitToPoints(map, points);
+        // Масштаб подгоняем по линии маршрута: велосипеды стоят по всему городу
+        // и, если учитывать их все, маршрут схлопнулся бы в точку.
+        await fitToPoints(map, route.geometry.coordinates);
       } catch (e) {
         setDrawError(e?.message || 'Не удалось отрисовать маркеры.');
       }
