@@ -21,7 +21,11 @@ function loadScript() {
   const key = import.meta.env.VITE_YANDEX_API_KEY;
   if (!key) {
     return Promise.reject(
-      new Error('Не задан ключ Яндекс.Карт. Добавьте VITE_YANDEX_API_KEY в файл .env (см. .env.example).'),
+      new Error(
+        'Не задан ключ Яндекс.Карт. При разработке добавьте VITE_YANDEX_API_KEY в файл .env, ' +
+          'а при сборке образа передайте его аргументом: ' +
+          'docker build --build-arg VITE_YANDEX_API_KEY=<ключ> (см. .env.example и Dockerfile).',
+      ),
     );
   }
 
@@ -84,5 +88,7 @@ export async function addMarker(map, coords, { color = '#1b8a5a' } = {}) {
 
 export async function fitToPoints(map, points) {
   const ymaps = await loadApi();
-  map.setBounds(ymaps.util.bounds.fromPoints(points.map(toLatLng)), { checkZoomRange: true });
+  // zoomMargin оставляет поля, чтобы линия не упиралась в края карты.
+  map.setBounds(ymaps.util.bounds.fromPoints(points.map(toLatLng)),
+    { checkZoomRange: true, zoomMargin: 40 });
 }

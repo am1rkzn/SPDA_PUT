@@ -10,6 +10,18 @@ HERE = Path(__file__).parent
 CATEGORIES = {"туристический", "активный", "спокойный"}
 USER = "demo"
 
+# Демонстрационный парк: точки рядом со стартами маршрутов каталога.
+# Велосипед b1 ставится в точку старта подготовленного маршрута (см. seed).
+BIKES = (
+    ("b2", "Велосипед B", 49.1050, 55.7970),
+    ("b3", "Велосипед C", 49.1247, 55.7931),
+    ("b4", "Велосипед D", 49.1447, 55.8060),
+    ("b5", "Велосипед E", 48.9635, 55.8379),
+)
+# Часть парка на старте уже арендована другими демопользователями,
+# иначе в интерфейсе всегда виден только статус «свободен».
+BUSY_RIDERS = {"b2": "demo-rider-1", "b4": "demo-rider-2"}
+
 
 class Problem(Exception):
     def __init__(self, status, code, message):
@@ -45,10 +57,21 @@ def seed(conn, route):
                  (USER, "Демопользователь"))
     conn.execute("INSERT INTO bikes VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING",
                  ("b1", "Велосипед A", *route["start"]))
+    for bike_id, label, lon, lat in BIKES:
+        conn.execute("INSERT INTO bikes VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING",
+                     (bike_id, label, lon, lat))
     conn.execute("INSERT INTO routes VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING",
                  (route["id"], route["title"], route["description"], json.dumps(route["categories"]),
                   route["durationMin"], json.dumps(route["tags"]), *route["start"],
                   json.dumps(geometry), route["source"], route["verified"]))
+    for bike_id, rider in BUSY_RIDERS.items():
+        conn.execute("INSERT INTO users VALUES (?,?) ON CONFLICT(id) DO NOTHING",
+                     (rider, "Демопользователь в аренде"))
+        busy = conn.execute("SELECT 1 FROM rentals WHERE bike_id=? AND ended_at IS NULL",
+                            (bike_id,)).fetchone()
+        if not busy:
+            conn.execute("INSERT INTO rentals VALUES (?,?,?,?,?,NULL)",
+                         (f"seed-{bike_id}", rider, bike_id, route["id"], now()))
 
 
 def initialize():

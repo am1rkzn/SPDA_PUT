@@ -7,7 +7,7 @@ function dispose(map) {
   try { map?.destroy?.(); } catch {}
 }
 
-export default function MapView({ route, notice, onDismissNotice, onBack, onRent, showRent }) {
+export default function MapView({ route, notice, onDismissNotice, onBack, onRent, showRent, children }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -84,10 +84,9 @@ export default function MapView({ route, notice, onDismissNotice, onBack, onRent
         }
         markersRef.current = markers;
 
-        const points = route.geometry.coordinates.concat(
-          bikes.filter((b) => b.coords).map((b) => b.coords),
-        );
-        await fitToPoints(map, points);
+        // Масштаб подгоняем по линии маршрута: велосипеды стоят по всему городу
+        // и, если учитывать их все, маршрут схлопнулся бы в точку.
+        await fitToPoints(map, route.geometry.coordinates);
       } catch (e) {
         setDrawError(e?.message || 'Не удалось отрисовать маркеры.');
       }
@@ -96,7 +95,8 @@ export default function MapView({ route, notice, onDismissNotice, onBack, onRent
 
   return (
     <div className="map-view">
-      <div className="toolbar">
+      {/* Шапка над обеими колонками: возврат к списку, название, уведомление. */}
+      <div className="map-view__head toolbar">
         <button type="button" onClick={onBack}>← К списку</button>
         {route && <h2>{route.title}</h2>}
         {notice && (
@@ -107,26 +107,35 @@ export default function MapView({ route, notice, onDismissNotice, onBack, onRent
         )}
       </div>
 
-      {mapError ? (
-        <div className="map-error">
-          <p>{mapError}</p>
-          <button type="button" onClick={() => window.location.reload()}>Повторить</button>
-        </div>
-      ) : (
-        <div ref={containerRef} className="map-container" />
-      )}
+      {/* Левая колонка: информация о маршруте и панели аренды (выбор велосипеда,
+          активная аренда). Так они не перекрывают карту и читаются сверху вниз. */}
+      <aside className="map-view__side">
+        {drawError && <p className="banner error">{drawError}</p>}
 
-      {drawError && <p className="banner error">{drawError}</p>}
+        {route && (
+          <div className="route-panel">
+            <p>{route.description}</p>
+            <p className="meta">{route.categories.join(', ')} · ~{route.durationMin} мин</p>
+            {showRent && (
+              <button type="button" className="primary wide" onClick={onRent}>Арендовать велосипед</button>
+            )}
+          </div>
+        )}
 
-      {route && (
-        <div className="route-panel">
-          <p>{route.description}</p>
-          <p className="meta">{route.categories.join(', ')} · ~{route.durationMin} мин</p>
-          {showRent && (
-            <button type="button" className="primary" onClick={onRent}>Арендовать велосипед</button>
-          )}
-        </div>
-      )}
+        {children}
+      </aside>
+
+      {/* Правая колонка: карта на всю доступную высоту со скруглёнными углами. */}
+      <div className="map-view__map">
+        {mapError ? (
+          <div className="map-error">
+            <p>{mapError}</p>
+            <button type="button" onClick={() => window.location.reload()}>Повторить</button>
+          </div>
+        ) : (
+          <div ref={containerRef} className="map-container" />
+        )}
+      </div>
     </div>
   );
 }

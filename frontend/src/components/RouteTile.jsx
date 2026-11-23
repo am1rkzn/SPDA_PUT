@@ -1,3 +1,5 @@
+import RouteThumb from './RouteThumb.jsx';
+
 export default function RouteTile({ route, isFav, onToggleFavorite, onShow }) {
   return (
     <article className="route-tile" onClick={onShow}>
@@ -5,7 +7,8 @@ export default function RouteTile({ route, isFav, onToggleFavorite, onShow }) {
         {route.photo ? (
           <img src={route.photo} alt={route.title} />
         ) : (
-          <span className="photo-placeholder">📷 Нет фото</span>
+          /* Фото пока нет — показываем схему линии маршрута на сером фоне. */
+          <RouteThumb routeId={route.id} title={route.title} />
         )}
         <span className="route-tile__badge">~{route.durationMin} мин</span>
       </div>
@@ -14,10 +17,12 @@ export default function RouteTile({ route, isFav, onToggleFavorite, onShow }) {
         <h3 className="route-tile__title">{route.title}</h3>
         <p className="meta">{route.categories.join(' · ')}</p>
         <div className="route-tile__footer">
-          <span className="rating">
-            <span className="rating__star">★</span> {route.rating ?? '—'}
-            {route.reviews ? <span className="rating__count"> · {route.reviews}</span> : null}
-          </span>
+          {route.rating != null && (
+            <span className="rating">
+              <span className="rating__star">★</span> {route.rating}
+              {route.reviews ? <span className="rating__count"> · {route.reviews}</span> : null}
+            </span>
+          )}
           <button
             type="button"
             className={`fav-btn${isFav ? ' active' : ''}`}

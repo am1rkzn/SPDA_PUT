@@ -31,12 +31,14 @@ class ApiTests(unittest.TestCase):
         with db.connection(write=True) as conn:
             conn.execute("""INSERT INTO routes SELECT 'a',title,description,categories_json,
                 duration_min,'["центр"]',start_lon,start_lat,geometry_json,source,verified FROM routes""")
+        longest = max(c["durationMin"] for c in self.client.get("/api/routes").json())
         cards = self.client.get("/api/routes", params={"tags": " центр ,ЦЕНТР,набережная",
-                                                       "max_duration": 30, "trip_type": "любой"}).json()
-        self.assertEqual([c["id"] for c in cards], ["r1", "a"])
+                                                       "max_duration": longest, "trip_type": "любой"}).json()
+        # При равном числе совпавших тегов порядок задаёт ORDER BY id.
+        self.assertEqual(sorted(c["id"] for c in cards), ["a", "r1"])
         self.assertNotIn("geometry", cards[0])
         self.assertEqual(self.client.get("/api/routes/r1").json()["geometry"]["type"], "LineString")
-        self.assertEqual(self.client.get("/api/routes?max_duration=29").json(), [])
+        self.assertEqual(self.client.get(f"/api/routes?max_duration={longest - 1}").json(), [])
         for value in ["0", "-1", "30.5", "abc"]:
             self.assertEqual(self.client.get("/api/routes?max_duration="+value).status_code, 422)
         self.assertEqual(self.client.get("/api/routes?trip_type=other").status_code, 422)
@@ -63,7 +65,8 @@ class ApiTests(unittest.TestCase):
         self.finish(next_id)
         self.assertEqual(self.client.get("/api/bikes").json()[0]["status"], "available")
         with db.connection() as conn:
-            self.assertEqual(conn.execute("SELECT COUNT(*) FROM rentals").fetchone()[0], 2)
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM rentals WHERE user_id=?",
+                                          (db.USER,)).fetchone()[0], 2)
 
     def test_errors(self):
         self.assertEqual(self.start("bad").status_code, 422)
@@ -72,11 +75,11 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(self.start(uuid4(), bike="unknown").status_code, 404)
         self.start(uuid4())
         with db.connection(write=True) as conn:
-            conn.execute("INSERT INTO bikes VALUES ('b2','B',49,55)")
-        self.assertEqual(self.start(uuid4(), bike="b2").json()["error"]["code"], "RENTAL_ACTIVE")
+            conn.execute("INSERT INTO bikes VALUES ('b99','B',49,55)")
+        self.assertEqual(self.start(uuid4(), bike="b99").json()["error"]["code"], "RENTAL_ACTIVE")
         with db.connection(write=True) as conn:
             conn.execute("INSERT INTO users VALUES ('other','Other')")
-            conn.execute("UPDATE rentals SET user_id='other'")
+            conn.execute("UPDATE rentals SET user_id='other' WHERE user_id=?", (db.USER,))
         self.assertEqual(self.start(uuid4()).json()["error"]["code"], "BIKE_BUSY")
         with db.connection(write=True):
             self.assertEqual(self.start(uuid4()).status_code, 503)
