@@ -92,7 +92,7 @@ def health():
 def ready():
     try:
         with db.connection() as conn:
-            ok = (conn.execute("PRAGMA user_version").fetchone()[0] == 1 and
+            ok = (conn.execute("PRAGMA user_version").fetchone()[0] == 2 and
                   conn.execute("SELECT 1 FROM users WHERE id=?", (db.USER,)).fetchone())
     except sqlite3.Error:
         ok = False

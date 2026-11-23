@@ -2,7 +2,7 @@
  {
   "id": "r-les-kazani",
   "title": "Лес в центре Казани",
-  "description": "Кольцевой маршрут по лесопарковой зоне в черте города.",
+  "description": "Кольцо от моста Миллениум через парк Горького и лесные тропы вдоль Казанки. На маршруте встречаются подъёмы и спуски.",
   "categories": [
    "спокойный",
    "туристический"
@@ -171,7 +171,14 @@
   },
   "source": "https://www.прокатвсем.рф/marshruty/les_kazani",
   "verified": false,
-  "_lengthKm": 7.1
+  "_lengthKm": 7.1,
+  "landmarks": [
+   "Старт у моста Миллениум",
+   "Парк Горького",
+   "Русско-Немецкая Швейцария",
+   "Возвращение к мосту"
+  ],
+  "photo": "/routes/r1.webp"
  },
  {
   "id": "r-uram",
@@ -360,7 +367,13 @@
   },
   "source": "https://www.прокатвсем.рф/marshruty/uram10",
   "verified": false,
-  "_lengthKm": 9.16
+  "_lengthKm": 9.16,
+  "landmarks": [
+   "Экстрим-парк УРАМ",
+   "Набережная Казанки",
+   "Возвращение к УРАМу"
+  ],
+  "photo": "/routes/r-uram.webp"
  },
  {
   "id": "r-hram",
@@ -570,7 +583,14 @@
   },
   "source": "https://www.прокатвсем.рф/marshruty/kremlevskay-naberezhnaya",
   "verified": false,
-  "_lengthKm": 25.62
+  "_lengthKm": 25.62,
+  "landmarks": [
+   "Центр Казани",
+   "Набережная Казанки",
+   "Район храма всех религий",
+   "Возвращение к мосту Миллениум"
+  ],
+  "photo": "/routes/r-hram.webp"
  },
  {
   "id": "r-chernoe-ozero",
@@ -1029,7 +1049,14 @@
   "source": "https://www.sportmaster.ru/media/routes/kazan/velosiped-kazan/chernoe/",
   "verified": false,
   "_lengthKm": 2.17,
-  "_geometryNote": "Точки маршрута взяты из карты источника, геометрия улиц восстановлена по OSM (bike routing)"
+  "_geometryNote": "Точки маршрута взяты из карты источника, геометрия улиц восстановлена по OSM (bike routing)",
+  "landmarks": [
+   "Ленинский сад",
+   "Фонтан Любви",
+   "Улица Дзержинского",
+   "Парк Чёрное озеро"
+  ],
+  "photo": "/routes/r-chernoe-ozero.webp"
  },
  {
   "id": "r-lebyazhe",
@@ -1900,6 +1927,13 @@
   "source": "https://www.sportmaster.ru/media/routes/kazan/velosiped-kazan/lesopark-lebyazhe/",
   "verified": false,
   "_lengthKm": 9.98,
-  "_geometryNote": "Точки маршрута взяты из карты источника, геометрия улиц восстановлена по OSM (bike routing)"
+  "_geometryNote": "Точки маршрута взяты из карты источника, геометрия улиц восстановлена по OSM (bike routing)",
+  "landmarks": [
+   "Малое Лебяжье",
+   "Большое Лебяжье",
+   "Озеро Изумрудное",
+   "Светлое Лебяжье"
+  ],
+  "photo": "/routes/r-lebyazhe.webp"
  }
 ]

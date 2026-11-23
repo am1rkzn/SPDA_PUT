@@ -28,17 +28,21 @@ class ApiTests(unittest.TestCase):
 
     def test_catalog(self):
         self.assertEqual(self.client.get("/readyz").status_code, 200)
-        with db.connection(write=True) as conn:
-            conn.execute("""INSERT INTO routes SELECT 'a',title,description,categories_json,
-                duration_min,'["центр"]',start_lon,start_lat,geometry_json,source,verified FROM routes""")
-        longest = max(c["durationMin"] for c in self.client.get("/api/routes").json())
-        cards = self.client.get("/api/routes", params={"tags": " центр ,ЦЕНТР,набережная",
-                                                       "max_duration": longest, "trip_type": "любой"}).json()
-        # При равном числе совпавших тегов порядок задаёт ORDER BY id.
-        self.assertEqual(sorted(c["id"] for c in cards), ["a", "r1"])
+        cards = self.client.get("/api/routes").json()
+        self.assertEqual(len(cards), 5)
+        self.assertTrue(all(card["photo"] for card in cards))
         self.assertNotIn("geometry", cards[0])
-        self.assertEqual(self.client.get("/api/routes/r1").json()["geometry"]["type"], "LineString")
-        self.assertEqual(self.client.get(f"/api/routes?max_duration={longest - 1}").json(), [])
+        for card in cards:
+            detail = self.client.get("/api/routes/" + card["id"]).json()
+            self.assertGreater(detail["distanceKm"], 0)
+            self.assertGreaterEqual(len(detail["landmarks"]), 2)
+        short = self.client.get("/api/routes?max_duration=30").json()
+        self.assertEqual([c["id"] for c in short], ["r-chernoe-ozero"])
+        active = self.client.get("/api/routes", params={"trip_type": "активный", "max_duration": 120}).json()
+        self.assertEqual([c["id"] for c in active], ["r-hram", "r-uram"])
+        ranked = self.client.get("/api/routes", params={"tags": " центр ,ЦЕНТР,набережная"}).json()
+        self.assertEqual(ranked[0]["id"], "r-hram")
+        self.assertEqual(self.client.get("/api/routes?max_duration=14").json(), [])
         for value in ["0", "-1", "30.5", "abc"]:
             self.assertEqual(self.client.get("/api/routes?max_duration="+value).status_code, 422)
         self.assertEqual(self.client.get("/api/routes?trip_type=other").status_code, 422)

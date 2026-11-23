@@ -3,7 +3,8 @@
 !backend/*.py
 !backend/*.txt
 !backend/*.sql
-!backend/seed.json
+!Iteration_2/
+!Iteration_2/routes_kazan.json
 backend/test_*.py
 backend/requirements-test.txt
 !frontend/
@@ -12,3 +13,7 @@ backend/requirements-test.txt
 !frontend/package*.json
 !frontend/index.html
 !frontend/vite.config.js
+frontend/.env*
+frontend/node_modules/
+frontend/.npm-cache/
+frontend/dist/

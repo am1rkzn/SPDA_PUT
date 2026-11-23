@@ -3,7 +3,6 @@ import * as api from './api.js';
 import PreferenceForm from './components/PreferenceForm.jsx';
 import Recommendations from './components/Recommendations.jsx';
 import MapView from './components/MapView.jsx';
-import BikePicker from './components/BikePicker.jsx';
 import ActiveRental from './components/ActiveRental.jsx';
 import StatusBanner from './components/StatusBanner.jsx';
 
@@ -23,10 +22,10 @@ export default function App() {
   const [renderedStep, setRenderedStep] = useState('recommend');
   const [phase, setPhase] = useState('in');
   const [rentStage, setRentStage] = useState('none');
-  const [filters, setFilters] = useState({ tripType: 'любой', maxDuration: 60, tags: [] });
+  const [filters, setFilters] = useState({ tripType: 'любой', maxDuration: 120, tags: [] });
   const [routes, setRoutes] = useState([]);
   const [selectedRoute, setSelectedRoute] = useState(null);
-  const [bikes, setBikes] = useState([]);
+  const [fleetRevision, setFleetRevision] = useState(0);
   const [rental, setRental] = useState(null);
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState(null);
@@ -139,44 +138,21 @@ export default function App() {
     }
   }
 
-  async function loadBikes() {
-    setLoading(true);
-    try {
-      setBikes(await api.getBikes());
-    } catch (e) {
-      showError(e);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleRent() {
-    clearBanner();
-    await loadBikes();
-    setRentStage('pick');
-  }
-
-  async function refreshBikes() {
-    clearBanner();
-    await loadBikes();
-  }
-
-  function handleCloseRent() {
-    setRentStage('none');
-  }
-
   async function writeRental(action, successNotice) {
     if (writeLock.current || syncState !== 'ready') return;
     writeLock.current = true;
     setWriting(true);
     clearBanner();
+    let busyConflict = false;
     try {
       await action();
       setNotice(successNotice);
     } catch (e) {
+      busyConflict = e.code === 'BIKE_BUSY';
       showError(e);
     } finally {
-      await syncRental();
+      setFleetRevision(revision => revision + 1);
+      if (!busyConflict) await syncRental();
       setWriting(false);
       writeLock.current = false;
     }
@@ -221,16 +197,25 @@ export default function App() {
           )}
           <div key={renderedStep} className={`step-fade ${phase}`}>
             {renderedStep === 'recommend' && syncState === 'ready' && (
-              <div className="layout">
-                <PreferenceForm filters={filters} onFiltersChange={setFilters} />
-                <Recommendations
-                  routes={routes}
-                  loading={loading}
-                  favorites={favorites}
-                  onToggleFavorite={toggleFavorite}
-                  onShow={handleShowRoute}
-                />
-              </div>
+              <>
+                <section className="catalog-intro">
+                  <h2>Куда поедем в Казани?</h2>
+                  <div>
+                    <p>В «ПУТИ» собраны пять веломаршрутов по Казани. За 15 минут можно прокатиться от Ленинского сада до Чёрного озера, а если есть побольше времени — отправиться к храму всех религий. Выберите, сколько времени у вас есть и что хочется увидеть по дороге.</p>
+                    <p>Откройте маршрут, чтобы посмотреть его на карте и узнать, какие места встретятся по пути. В прототипе можно также выбрать свободный велосипед и попробовать демоаренду.</p>
+                  </div>
+                </section>
+                <div className="layout">
+                  <PreferenceForm filters={filters} onFiltersChange={setFilters} />
+                  <Recommendations
+                    routes={routes}
+                    loading={loading}
+                    favorites={favorites}
+                    onToggleFavorite={toggleFavorite}
+                    onShow={handleShowRoute}
+                  />
+                </div>
+              </>
             )}
 
             {renderedStep === 'map' && syncState === 'ready' && (
@@ -241,20 +226,12 @@ export default function App() {
                     notice={notice}
                     onDismissNotice={dismissNotice}
                     onBack={handleBackToRecommend}
-                    onRent={handleRent}
-                    showRent={rentStage === 'none' && !rental && syncState === 'ready'}
+                    key={selectedRoute.id}
+                    onStart={handleStartRental}
+                    canRent={!rental}
+                    writing={writing}
+                    fleetRevision={fleetRevision}
                   >
-                    {rentStage === 'pick' && (
-                      <BikePicker
-                        bikes={bikes}
-                        route={selectedRoute}
-                        loading={loading || writing || syncState !== 'ready'}
-                        onBack={handleCloseRent}
-                        onRefresh={refreshBikes}
-                        onStart={handleStartRental}
-                      />
-                    )}
-
                     {rentStage === 'active' && rental && (
                       <ActiveRental
                         rental={rental}

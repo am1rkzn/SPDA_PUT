@@ -1,14 +1,12 @@
-import RouteThumb from './RouteThumb.jsx';
+import { useState } from 'react';
 
 export default function RouteTile({ route, isFav, onToggleFavorite, onShow }) {
+  const [failedPhoto, setFailedPhoto] = useState(null);
   return (
     <article className="route-tile" onClick={onShow}>
       <div className="route-tile__photo">
-        {route.photo ? (
-          <img src={route.photo} alt={route.title} />
-        ) : (
-          /* Фото пока нет — показываем схему линии маршрута на сером фоне. */
-          <RouteThumb routeId={route.id} title={route.title} />
+        {route.photo && failedPhoto !== route.photo && (
+          <img src={route.photo} alt={route.title} onError={() => setFailedPhoto(route.photo)} />
         )}
         <span className="route-tile__badge">~{route.durationMin} мин</span>
       </div>

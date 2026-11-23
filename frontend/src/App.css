@@ -432,6 +432,21 @@ button.wide {
 }
 
 /* Сетка плиток рекомендаций (3 столбца) */
+.catalog-intro {
+  display: grid;
+  grid-template-columns: minmax(200px, 320px) minmax(0, 84ch);
+  gap: 12px 28px;
+  margin-bottom: 16px;
+  padding: clamp(18px, 2vw, 32px);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.catalog-intro h2 { margin: 0; font-size: clamp(1.6rem, 2.5vw, 2.6rem); line-height: 1.1; }
+.catalog-intro p { margin: 0; line-height: 1.5; }
+.catalog-intro p + p { margin-top: .6em; }
+.catalog-credits { margin-top: 16px; font-size: .85rem; }
+.catalog-credits a { color: var(--muted); }
+
 .recommend-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -451,7 +466,7 @@ button.wide {
 }
 .route-tile__photo {
   position: relative;
-  height: 165px;
+  aspect-ratio: 16 / 9;
   background: #eef1f5;
   display: flex;
   align-items: center;
@@ -470,41 +485,18 @@ button.wide {
   line-height: 1;
 }
 .route-tile__photo img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-.photo-placeholder {
-  color: var(--muted);
-  font-size: 1rem;
-}
-/* Схема маршрута вместо отсутствующего фото: белая линия на сером фоне плитки.
-   Тонкая тень под линией нужна, чтобы белое читалось на светлом фоне. */
-.route-thumb {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.route-thumb__shadow {
-  fill: none;
-  stroke: rgba(29, 32, 35, 0.16);
-  stroke-width: 6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.route-thumb__line {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.route-thumb__start {
-  fill: #fff;
-  stroke: rgba(29, 32, 35, 0.25);
-  stroke-width: 1;
-}
+.route-tile__photo img[src$="/r-hram.webp"] { object-position: 50% 8%; }
+.route-tile__photo img[src$="/r-chernoe-ozero.webp"] { object-position: 50% 52%; }
+.route-tile__photo img[src$="/r-lebyazhe.webp"] { object-position: 50% 62%; }
+.route-tile__photo img[src$="/r-uram.webp"] { object-position: 50% 72%; }
+.route-tile__photo img[src$="/r1.webp"] { object-position: 50% 70%; }
 .route-tile__body {
   padding: 15px 18px;
   display: flex;
@@ -691,6 +683,7 @@ button.wide {
 }
 
 @media (max-width: 760px) {
+  .catalog-intro { grid-template-columns: 1fr; }
   .layout {
     flex-direction: column;
   }
@@ -717,4 +710,29 @@ button.wide {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+.route-layout {
+  height: auto;
+  min-height: calc(100dvh - 88px);
+  grid-template-columns: clamp(300px, 23vw, 340px) minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas: 'head head' 'description map' 'rental map';
+  align-items: start;
+}
+.route-description { grid-area: description; }
+.route-description ol { padding-left: 1.5rem; line-height: 1.65; }
+.route-rental { grid-area: rental; min-width: 0; }
+.route-layout .map-view__map { height: auto; min-height: 320px; align-self: stretch; }
+.route-layout .map-container { position: absolute; inset: 0; }
+.fleet-overview { position: absolute; top: 10px; right: 10px; box-shadow: 0 2px 8px #0002; }
+.map-failure { position: absolute; inset: 0; display: grid; align-content: center; justify-items: center; }
+@media (max-width: 900px) {
+  .route-layout {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: 'head' 'description' 'map' 'rental';
+  }
+  .route-layout .map-view__map { height: clamp(260px, 40vh, 350px); min-height: 0; }
 }

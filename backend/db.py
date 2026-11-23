@@ -43,7 +43,7 @@ def connection(*, initialize=False, write=False):
             yield conn
 
 
-def seed(conn, route):
+def seed_route(conn, route):
     def valid_point(point):
         return (len(point) == 2 and -180 <= point[0] <= 180 and -90 <= point[1] <= 90)
 
@@ -53,6 +53,21 @@ def seed(conn, route):
             geometry["type"] == "LineString" and len(geometry["coordinates"]) >= 2 and
             all(valid_point(p) for p in geometry["coordinates"])):
         raise ValueError("Некорректные начальные данные маршрута")
+    conn.execute("""INSERT INTO routes
+        (id,title,description,categories_json,duration_min,tags_json,start_lon,start_lat,
+         geometry_json,source,verified,photo,distance_km,landmarks_json)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET title=excluded.title, description=excluded.description,
+            categories_json=excluded.categories_json, duration_min=excluded.duration_min,
+            tags_json=excluded.tags_json, start_lon=excluded.start_lon, start_lat=excluded.start_lat,
+            geometry_json=excluded.geometry_json, source=excluded.source, verified=excluded.verified,
+            photo=excluded.photo, distance_km=excluded.distance_km, landmarks_json=excluded.landmarks_json""",
+        (route["id"], route["title"], route["description"], json.dumps(route["categories"]),
+         route["durationMin"], json.dumps(route["tags"]), *route["start"], json.dumps(geometry),
+         route["source"], route["verified"], route["photo"], route["_lengthKm"], json.dumps(route["landmarks"])))
+
+
+def seed_fleet(conn, route):
     conn.execute("INSERT INTO users VALUES (?,?) ON CONFLICT(id) DO NOTHING",
                  (USER, "Демопользователь"))
     conn.execute("INSERT INTO bikes VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING",
@@ -60,10 +75,6 @@ def seed(conn, route):
     for bike_id, label, lon, lat in BIKES:
         conn.execute("INSERT INTO bikes VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING",
                      (bike_id, label, lon, lat))
-    conn.execute("INSERT INTO routes VALUES (?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO NOTHING",
-                 (route["id"], route["title"], route["description"], json.dumps(route["categories"]),
-                  route["durationMin"], json.dumps(route["tags"]), *route["start"],
-                  json.dumps(geometry), route["source"], route["verified"]))
     for bike_id, rider in BUSY_RIDERS.items():
         conn.execute("INSERT INTO users VALUES (?,?) ON CONFLICT(id) DO NOTHING",
                      (rider, "Демопользователь в аренде"))
@@ -81,16 +92,27 @@ def initialize():
             for statement in (HERE / "schema.sql").read_text("utf-8").split(";"):
                 if statement.strip():
                     conn.execute(statement)
-            conn.execute("PRAGMA user_version=1")
-        elif version != 1:
+            version = 1
+        if version == 1:
+            conn.execute("ALTER TABLE routes ADD COLUMN photo TEXT")
+            conn.execute("ALTER TABLE routes ADD COLUMN distance_km REAL")
+            conn.execute("ALTER TABLE routes ADD COLUMN landmarks_json TEXT NOT NULL DEFAULT '[]'")
+            conn.execute("PRAGMA user_version=2")
+        elif version != 2:
             raise RuntimeError("Неизвестная версия схемы SQLite")
-        seed(conn, json.loads((HERE / "seed.json").read_text("utf-8")))
+        catalog = HERE.parent / "Iteration_2" / "routes_kazan.json"
+        routes = json.loads(catalog.read_text("utf-8"))
+        for route in routes:
+            if route["id"] == "r-les-kazani":
+                route["id"] = "r1"  # Existing rentals reference this public ID.
+            seed_route(conn, route)
+        seed_fleet(conn, next(route for route in routes if route["id"] == "r1"))
 
 
 def route_card(row):
     return dict(id=row["id"], title=row["title"], categories=json.loads(row["categories_json"]),
                 durationMin=row["duration_min"], tags=json.loads(row["tags_json"]),
-                start=[row["start_lon"], row["start_lat"]])
+                start=[row["start_lon"], row["start_lat"]], photo=row["photo"])
 
 
 def list_routes(conn, trip_type, max_duration, tags):
@@ -117,6 +139,7 @@ def required(row):
 def get_route(conn, route_id):
     row = required(conn.execute("SELECT * FROM routes WHERE id=?", (route_id,)).fetchone())
     return {**route_card(row), "description": row["description"],
+            "distanceKm": row["distance_km"], "landmarks": json.loads(row["landmarks_json"]),
             "geometry": json.loads(row["geometry_json"]), "verified": bool(row["verified"])}
 
 

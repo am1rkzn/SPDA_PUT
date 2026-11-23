@@ -20,6 +20,9 @@ export default function Recommendations({ routes, loading, favorites, onToggleFa
           />
         ))}
       </div>
+      <footer className="catalog-credits">
+        <a href="/routes/credits.html">Фотографии</a>
+      </footer>
     </section>
   );
 }

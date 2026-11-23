@@ -64,31 +64,44 @@ export async function createMap(container, options = {}) {
   });
 }
 
-export async function drawRoute(map, route) {
-  const ymaps = await loadApi();
-  const coords = route.geometry.coordinates.map(toLatLng);
-  const line = new ymaps.Polyline(coords, {}, {
-    strokeColor: '#e8482c',
-    strokeWidth: 5,
-    strokeOpacity: 1,
+// These drawing functions run after createMap has resolved the SDK.
+export function drawRoute(map, route) {
+  const line = new _ymaps.Polyline(route.geometry.coordinates.map(toLatLng), {}, {
+    strokeColor: '#e8482c', strokeWidth: 5, strokeOpacity: 1,
+  });
+  const start = new _ymaps.Placemark(toLatLng(route.start), { hintContent: 'Старт маршрута' }, {
+    preset: 'islands#greenFlagIcon',
   });
   map.geoObjects.add(line);
-  return line;
+  map.geoObjects.add(start);
+  return () => {
+    map.geoObjects.remove(line);
+    map.geoObjects.remove(start);
+  };
 }
 
-export async function addMarker(map, coords, { color = '#1b8a5a' } = {}) {
-  const ymaps = await loadApi();
-  const marker = new ymaps.Placemark(toLatLng(coords), {}, {
-    preset: 'islands#circleIcon',
-    iconColor: color,
+export function addBike(map, bike, select) {
+  const available = bike.status === 'available';
+  const marker = new _ymaps.Placemark(toLatLng(bike.coords), {
+    hintContent: bike.label + (available ? ' · свободен' : ' · занят'),
+  }, {
+    iconLayout: 'default#image',
+    iconImageHref: available ? '/markers/bike-available.svg' : '/markers/bike-busy.svg',
+    iconImageSize: [36, 36], iconImageOffset: [-18, -36],
+    zIndex: 1000,
   });
+  const click = () => select(bike.id);
+  marker.events.add('click', click);
   map.geoObjects.add(marker);
-  return { remove: () => map.geoObjects.remove(marker) };
+  return () => {
+    marker.events.remove('click', click);
+    map.geoObjects.remove(marker);
+  };
 }
 
-export async function fitToPoints(map, points) {
-  const ymaps = await loadApi();
-  // zoomMargin оставляет поля, чтобы линия не упиралась в края карты.
-  map.setBounds(ymaps.util.bounds.fromPoints(points.map(toLatLng)),
-    { checkZoomRange: true, zoomMargin: 40 });
+export function fitToPoints(map, points) {
+  if (points.length) {
+    map.setBounds(_ymaps.util.bounds.fromPoints(points.map(toLatLng)),
+      { checkZoomRange: true, zoomMargin: 48 });
+  }
 }

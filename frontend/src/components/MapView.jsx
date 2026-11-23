@@ -1,141 +1,113 @@
 import { useEffect, useRef, useState } from 'react';
-import { createMap, drawRoute, addMarker, fitToPoints } from '../map.ymaps21.js';
-import * as api from '../api.js';
+import { createMap, drawRoute, addBike, fitToPoints } from '../map.ymaps21.js';
+import { getBikes } from '../api.js';
 
-function dispose(map) {
-  try { map?.remove?.(); } catch {}
-  try { map?.destroy?.(); } catch {}
-}
-
-export default function MapView({ route, notice, onDismissNotice, onBack, onRent, showRent, children }) {
-  const containerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef([]);
-  const [mapReady, setMapReady] = useState(false);
-  const [mapError, setMapError] = useState(null);
-  const [drawError, setDrawError] = useState(null);
+export default function MapView({ route, notice, onDismissNotice, onBack, onStart, canRent, writing, fleetRevision, children }) {
+  const container = useRef(null);
+  const [map, setMap] = useState(null);
+  const [mapError, setMapError] = useState(false);
   const [bikes, setBikes] = useState([]);
+  const [fleetError, setFleetError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [selectedId, setSelectedId] = useState(null);
+  const selected = bikes.find(bike => bike.id === selectedId);
+  const card = useRef(null);
 
-  // 1) Создаём карту.
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    let cancelled = false;
-    Promise.resolve(createMap(el))
-      .then((m) => {
-        if (cancelled) {
-          dispose(m);
-          return;
-        }
-        mapRef.current = m;
-        setMapReady(true);
-      })
-      .catch((e) => setMapError(e?.message || 'Не удалось загрузить карту.'));
+    let disposed = false;
+    let instance;
+    const timeout = setTimeout(() => setMapError(true), 12000);
+    createMap(container.current).then(result => {
+      if (disposed) {
+        result.destroy();
+        return;
+      }
+      instance = result;
+      setMapError(false);
+      setMap(result);
+    }).catch(() => { if (!disposed) setMapError(true); })
+      .finally(() => clearTimeout(timeout));
     return () => {
-      cancelled = true;
-      dispose(mapRef.current);
-      mapRef.current = null;
-      markersRef.current = [];
-      setMapReady(false);
+      disposed = true;
+      clearTimeout(timeout);
+      instance?.destroy();
     };
   }, []);
 
-  // 2) Подгружаем велосипеды (для маркеров на карте).
   useEffect(() => {
     let cancelled = false;
-    api.getBikes()
-      .then((list) => { if (!cancelled) setBikes(list); })
-      .catch(() => {});
+    setFleetError(false);
+    getBikes().then(list => {
+      if (!cancelled) setBikes(list);
+    }).catch(() => {
+      if (!cancelled) {
+        setBikes([]);
+        setFleetError(true);
+      }
+    });
     return () => { cancelled = true; };
-  }, []);
+  }, [fleetRevision, retry]);
 
-  function clearMarkers() {
-    markersRef.current.forEach((m) => { try { m.remove?.(); } catch {} });
-    markersRef.current = [];
-  }
-
-  // 3) Рисуем линию маршрута.
   useEffect(() => {
-    if (!mapReady || !route?.geometry) return;
-    const map = mapRef.current;
-    (async () => {
-      try {
-        setDrawError(null);
-        await drawRoute(map, route);
-      } catch (e) {
-        setDrawError(e?.message || 'Не удалось отрисовать маршрут.');
-      }
-    })();
-  }, [mapReady, route]);
+    if (!map) return;
+    const remove = drawRoute(map, route);
+    fitToPoints(map, route.geometry.coordinates);
+    return remove;
+  }, [map, route]);
 
-  // 4) Маркеры + подгонка масштаба.
   useEffect(() => {
-    if (!mapReady || !route?.geometry) return;
-    const map = mapRef.current;
-    (async () => {
-      try {
-        clearMarkers();
-        const markers = [await addMarker(map, route.start, { color: '#1b8a5a' })];
-        for (const b of bikes) {
-          if (b.coords) {
-            const color = b.status === 'available' ? '#1a73e8' : '#9aa3ad';
-            markers.push(await addMarker(map, b.coords, { color }));
-          }
-        }
-        markersRef.current = markers;
+    if (!map) return;
+    const removers = bikes.map(bike => addBike(map, bike, setSelectedId));
+    return () => removers.forEach(remove => remove());
+  }, [map, bikes]);
 
-        // Масштаб подгоняем по линии маршрута: велосипеды стоят по всему городу
-        // и, если учитывать их все, маршрут схлопнулся бы в точку.
-        await fitToPoints(map, route.geometry.coordinates);
-      } catch (e) {
-        setDrawError(e?.message || 'Не удалось отрисовать маркеры.');
-      }
-    })();
-  }, [mapReady, route, bikes]);
+  useEffect(() => {
+    if (selectedId && window.matchMedia('(max-width: 900px)').matches) {
+      card.current?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedId]);
 
   return (
-    <div className="map-view">
-      {/* Шапка над обеими колонками: возврат к списку, название, уведомление. */}
+    <div className="map-view route-layout">
       <div className="map-view__head toolbar">
         <button type="button" onClick={onBack}>← К списку</button>
-        {route && <h2>{route.title}</h2>}
-        {notice && (
-          <div className="toolbar-notice" role="status">
-            <span>{notice}</span>
-            <button type="button" className="notice-close" onClick={onDismissNotice} aria-label="Закрыть">×</button>
-          </div>
-        )}
+        <h2>{route.title}</h2>
+        {notice && <div role="status">{notice} <button onClick={onDismissNotice} aria-label="Закрыть">×</button></div>}
       </div>
-
-      {/* Левая колонка: информация о маршруте и панели аренды (выбор велосипеда,
-          активная аренда). Так они не перекрывают карту и читаются сверху вниз. */}
-      <aside className="map-view__side">
-        {drawError && <p className="banner error">{drawError}</p>}
-
-        {route && (
-          <div className="route-panel">
-            <p>{route.description}</p>
-            <p className="meta">{route.categories.join(', ')} · ~{route.durationMin} мин</p>
-            {showRent && (
-              <button type="button" className="primary wide" onClick={onRent}>Арендовать велосипед</button>
-            )}
-          </div>
-        )}
-
-        {children}
-      </aside>
-
-      {/* Правая колонка: карта на всю доступную высоту со скруглёнными углами. */}
+      <section className="route-panel route-description">
+        <p className="meta">{route.categories.join(' · ')}</p>
+        <strong>{route.distanceKm?.toLocaleString('ru-RU')} км · {route.durationMin} мин</strong>
+        <p>{route.description}</p>
+        {route.landmarks?.length > 0 && <>
+          <h3>По пути</h3>
+          <ol>{route.landmarks.map(place => <li key={place}>{place}</li>)}</ol>
+        </>}
+      </section>
       <div className="map-view__map">
-        {mapError ? (
-          <div className="map-error">
-            <p>{mapError}</p>
-            <button type="button" onClick={() => window.location.reload()}>Повторить</button>
-          </div>
-        ) : (
-          <div ref={containerRef} className="map-container" />
-        )}
+        <div ref={container} className="map-container" />
+        {mapError && <div className="map-failure"><p>Не удалось загрузить карту.</p>
+          <button onClick={() => window.location.reload()}>Повторить загрузку карты</button></div>}
+        {map && bikes.length > 0 && <button className="fleet-overview"
+          onClick={() => fitToPoints(map, bikes.map(b => b.coords))}>Показать все велосипеды</button>}
       </div>
+      <section ref={card} className="route-rental">
+        {children}
+        {fleetError && <p role="alert">Не удалось загрузить велосипеды. <button onClick={() => setRetry(n => n + 1)}>Повторить</button></p>}
+        {canRent && <div className="panel rent-panel">
+          {mapError && <label>Выберите велосипед
+            <select className="select" value={selectedId || ''} onChange={e => setSelectedId(e.target.value)}>
+              <option value="">Выберите из списка</option>
+              {bikes.map(b => <option key={b.id} value={b.id}>{b.label} · {b.status === 'available' ? 'свободен' : 'занят'}</option>)}
+            </select>
+          </label>}
+          {selected ? <>
+            <h3>{selected.label}</h3>
+            <p role="status">{selected.status === 'available' ? 'Свободен' : 'Занят'}</p>
+            <button type="button" className="primary wide" disabled={writing || selected.status !== 'available'}
+              onClick={() => onStart(selected.id)}>Арендовать</button>
+          </> : !mapError && <p>Нажмите на велосипед на карте, чтобы посмотреть его и начать аренду.</p>}
+        </div>}
+      </section>
     </div>
   );
 }
