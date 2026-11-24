@@ -1,0 +1,131 @@
+name: CI and release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  IMAGE_NAME: ghcr.io/am1rkzn/spda-put
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Test the backend
+        run: |
+          python -m pip install -r backend/requirements-test.txt
+          python -m unittest discover -s backend -p 'test_*.py' -v
+
+      - name: Check Kubernetes manifests
+        run: kubectl kustomize . > /dev/null
+
+      - name: Build the app and Docker image for review
+        if: github.event_name == 'pull_request'
+        run: docker build .
+
+  release:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the release image
+        env:
+          VITE_YANDEX_API_KEY: ${{ secrets.VITE_YANDEX_API_KEY }}
+        run: |
+          docker build \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --build-arg VITE_YANDEX_API_KEY \
+            --tag "$IMAGE_NAME:$GITHUB_SHA" .
+
+      - name: Check the release image
+        run: |
+          container=$(docker run --detach --rm --publish 127.0.0.1::8000 "$IMAGE_NAME:$GITHUB_SHA")
+          trap 'docker stop "$container" >/dev/null' EXIT
+          origin="http://$(docker port "$container" 8000/tcp)"
+          if ! curl -fsS --retry 10 --retry-all-errors --retry-delay 1 --max-time 5 "$origin/readyz"; then
+            docker logs "$container"
+            exit 1
+          fi
+          curl -fsS "$origin/" -o /dev/null
+          curl -fsS "$origin/api/routes" | python3 -c 'import json, sys; assert json.load(sys.stdin)'
+
+      - name: Publish to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" |
+            docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          image_tag="$IMAGE_NAME:$GITHUB_SHA"
+          docker push "$image_tag" | tee "$RUNNER_TEMP/put-image-push.log"
+          digest=$(awk '$2 == "digest:" {print $3}' "$RUNNER_TEMP/put-image-push.log")
+          if ! [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "GHCR did not return a valid image digest." >&2
+            exit 1
+          fi
+          echo "RELEASE_IMAGE=$IMAGE_NAME@$digest" >> "$GITHUB_ENV"
+
+      - name: Record the tested image in main
+        run: |
+          git fetch --no-tags origin refs/heads/main
+          if [[ "$(git rev-parse FETCH_HEAD)" != "$GITHUB_SHA" ]]; then
+            echo "main has advanced. The newer workflow will handle the release."
+            exit 0
+          fi
+
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          manifest = Path("deploy/app.yaml")
+          image = re.escape(os.environ["IMAGE_NAME"])
+          version = os.environ["GITHUB_SHA"]
+          text, image_count = re.subn(
+              rf"(?m)^([ \t]*image: ){image}@sha256:[0-9a-f]{{64}}$",
+              lambda match: match[1] + os.environ["RELEASE_IMAGE"],
+              manifest.read_text(encoding="utf-8"),
+          )
+          text, version_count = re.subn(
+              r'(\{name: PUT_VERSION, value: ")[^"\n]+("\})',
+              lambda match: match[1] + version + match[2],
+              text,
+          )
+          if (image_count, version_count) != (1, 1):
+              raise SystemExit("Expected exactly one PUT image and PUT_VERSION in deploy/app.yaml")
+          manifest.write_text(text, encoding="utf-8")
+          PY
+
+          kubectl kustomize . > /dev/null
+          git diff --check
+          if git diff --quiet -- deploy/app.yaml; then
+            exit 0
+          fi
+          git add -- deploy/app.yaml
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m "Deploy $GITHUB_SHA"
+          git push origin HEAD:refs/heads/main

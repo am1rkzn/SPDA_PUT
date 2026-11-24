@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: put-data
+  namespace: team-2
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: put, namespace: team-2}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector: {matchLabels: {app: put}}
+  template:
+    metadata: {labels: {app: put}}
+    spec:
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001}
+      imagePullSecrets:
+        - name: put-ghcr
+      containers:
+        - name: put
+          image: ghcr.io/am1rkzn/spda-put@sha256:50192ca56d303fc9bfa248c398a8f71a5a2b137acf182f5290e1f67e2a984a5e
+          ports: [{name: http, containerPort: 8000}]
+          env:
+            - {name: PUT_ENV, value: course}
+            - {name: PUT_VERSION, value: "7493d26"}
+            - {name: PUT_OTEL_ENABLED, value: "false"}
+          volumeMounts: [{name: db, mountPath: /data}]
+          readinessProbe: {httpGet: {path: /readyz, port: http}}
+          livenessProbe: {httpGet: {path: /healthz, port: http}, initialDelaySeconds: 10}
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+      volumes: [{name: db, persistentVolumeClaim: {claimName: put-data}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: put, namespace: team-2}
+spec:
+  selector: {app: put}
+  ports: [{port: 80, targetPort: http}]
