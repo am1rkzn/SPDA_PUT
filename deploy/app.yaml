@@ -26,11 +26,11 @@ spec:
         - name: put-ghcr
       containers:
         - name: put
-          image: ghcr.io/am1rkzn/spda-put@sha256:50192ca56d303fc9bfa248c398a8f71a5a2b137acf182f5290e1f67e2a984a5e
+          image: ghcr.io/am1rkzn/spda-put@sha256:967f831d8d7e9a6b8d762240e3e88a3e3808cbbac3dae284347e2aadcf9c269f
           ports: [{name: http, containerPort: 8000}]
           env:
             - {name: PUT_ENV, value: course}
-            - {name: PUT_VERSION, value: "7493d26"}
+            - {name: PUT_VERSION, value: "33df9c0cc6a0d0fb4dfa06fcb698eb5d0539c10c"}
             - {name: PUT_OTEL_ENABLED, value: "false"}
           volumeMounts: [{name: db, mountPath: /data}]
           readinessProbe: {httpGet: {path: /readyz, port: http}}
