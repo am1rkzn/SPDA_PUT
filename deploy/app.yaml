@@ -23,6 +23,11 @@ spec:
     spec:
       nodeSelector:
         student-team: team-2
+      tolerations:
+        - key: student-team
+          operator: Equal
+          value: team-2
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
