@@ -119,7 +119,7 @@ jobs:
           manifest.write_text(text, encoding="utf-8")
           PY
 
-          kubectl kustomize . > /dev/null
+          kubectl kustomize deploy > /dev/null
           git diff --check
           if git diff --quiet -- deploy/app.yaml; then
             exit 0
