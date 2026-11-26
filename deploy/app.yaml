@@ -45,10 +45,13 @@ spec:
             capabilities:
               drop: [ALL]
           ports: [{name: http, containerPort: 8000}]
+          envFrom:
+            - secretRef:
+                name: put-otel
           env:
             - {name: PUT_ENV, value: course}
             - {name: PUT_VERSION, value: "7e5ea1bd5c245e2ae32f85daeff7b17c8cd837be"}
-            - {name: PUT_OTEL_ENABLED, value: "false"}
+            - {name: PUT_OTEL_ENABLED, value: "true"}
           volumeMounts: [{name: db, mountPath: /data}]
           readinessProbe: {httpGet: {path: /readyz, port: http}}
           livenessProbe: {httpGet: {path: /healthz, port: http}, initialDelaySeconds: 10}
