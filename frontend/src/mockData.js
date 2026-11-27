@@ -1,4 +1,4 @@
-import catalog from '../../Iteration_2/routes_kazan.json';
+import catalog from '../../data/routes_kazan.json';
 
 export const ROUTES = catalog.map(route => ({
   ...route,

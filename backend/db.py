@@ -100,7 +100,7 @@ def initialize():
             conn.execute("PRAGMA user_version=2")
         elif version != 2:
             raise RuntimeError("Неизвестная версия схемы SQLite")
-        catalog = HERE.parent / "Iteration_2" / "routes_kazan.json"
+        catalog = HERE.parent / "data" / "routes_kazan.json"
         routes = json.loads(catalog.read_text("utf-8"))
         for route in routes:
             if route["id"] == "r-les-kazani":

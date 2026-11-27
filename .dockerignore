@@ -3,8 +3,8 @@
 !backend/*.py
 !backend/*.txt
 !backend/*.sql
-!Iteration_2/
-!Iteration_2/routes_kazan.json
+!data/
+!data/routes_kazan.json
 backend/test_*.py
 backend/requirements-test.txt
 !frontend/
